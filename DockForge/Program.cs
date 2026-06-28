@@ -1,4 +1,6 @@
 using DockForge.Components;
+using DockForge.Core.Interfaces;
+using DockForge.Services.Docker;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -6,6 +8,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
+builder.Services.AddScoped<IDockerService, DockerService>();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

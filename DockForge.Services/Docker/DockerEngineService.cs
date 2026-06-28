@@ -35,12 +35,21 @@ public sealed class DockerEngineService : IDockerService, IDisposable
             Image = container.Image,
             Status = container.State,
             Created = container.Created,
-            Ports = container.Ports.Select(port => new ContainerPort
-            {
-                PrivatePort = port.PrivatePort,
-                PublicPort = port.PublicPort,
-                Type = port.Type ?? string.Empty
-            }).ToList()
+            Ports = container.Ports
+                .GroupBy(port => new
+                {
+                    port.PrivatePort,
+                    port.PublicPort,
+                    Type = port.Type ?? string.Empty
+                })
+                .Select(group => group.First())
+                .Select(port => new ContainerPort
+                {
+                    PrivatePort = port.PrivatePort,
+                    PublicPort = port.PublicPort,
+                    Type = port.Type ?? string.Empty
+                })
+                .ToList()
         }).ToList();
     }
 

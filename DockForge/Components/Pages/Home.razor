@@ -3,6 +3,7 @@
 
 @using DockForge.Core.Interfaces
 @using DockForge.Core.Models
+@using DockForge.Core.Helpers
 @inject IDockerService DockerService
 
 <PageTitle>DockForge</PageTitle>
@@ -69,6 +70,10 @@
                                         <strong>@container.Name</strong>
                                         <br />
                                         <small>@container.Image</small>
+                                        <br />
+                                        <small class="text-muted">
+                                            Uptime: @UptimeFormatter.GetUptimeText(container)
+                                        </small>
                                     </div>
 
                                     <div class="d-flex gap-2 align-items-center">

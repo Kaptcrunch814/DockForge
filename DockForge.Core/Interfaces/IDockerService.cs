@@ -10,5 +10,7 @@ namespace DockForge.Core.Interfaces
         Task<List<ContainerInfo>> GetContainersAsync();
 
         Task RestartContainerAsync(string containerId);
+
+        Task<string> GetContainerLogsAsync(string containerId, int tail = 200);
     }
 }

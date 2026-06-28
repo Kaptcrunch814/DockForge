@@ -31,6 +31,18 @@ namespace DockForge.Services.Docker
             return Task.FromResult(containers);
         }
 
+        public Task<string> GetContainerLogsAsync(string containerId, int tail = 200)
+        {
+            var logs = """
+        [INFO] Starting fake container...
+        [INFO] Loading configuration...
+        [INFO] Container is running.
+        [INFO] This is fake log data for local development.
+        """;
+
+            return Task.FromResult(logs);
+        }
+
         public Task RestartContainerAsync(string containerId)
         {
             return Task.CompletedTask;

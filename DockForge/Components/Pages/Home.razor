@@ -81,6 +81,13 @@
                                                 @onclick="() => RestartContainerAsync(container)">
                                             @(isRestarting ? "Restarting..." : "Restart")
                                         </button>
+
+                                        <button type="button"
+                                                class="btn btn-sm btn-secondary"
+                                                disabled="@(isLoadingLogs && logContainerId == container.Id)"
+                                                @onclick="() => LoadContainerLogsAsync(container)">
+                                            @(isLoadingLogs && logContainerId == container.Id ? "Loading..." : "Logs")
+                                        </button>
                                     </div>
                                 </div>
 
@@ -101,10 +108,43 @@
     <div class="col-md-6">
         <div class="card">
             <div class="card-body">
-                <h3>📊 Resources</h3>
-                <p>CPU: --</p>
-                <p>RAM: --</p>
-                <p>GPU: --</p>
+                <h3>📜 Logs</h3>
+
+                @if (string.IsNullOrWhiteSpace(logContainerName))
+                {
+                    <p class="text-muted">
+                        Select a container and click Logs to view recent output.
+                    </p>
+                }
+                else
+                {
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <strong>@logContainerName</strong>
+
+                        <button type="button"
+                                class="btn btn-sm btn-outline-secondary"
+                                disabled="@isLoadingLogs"
+                                @onclick="RefreshSelectedLogsAsync">
+                            @(isLoadingLogs ? "Refreshing..." : "Refresh Logs")
+                        </button>
+                    </div>
+
+                    @if (!string.IsNullOrWhiteSpace(logErrorMessage))
+                    {
+                        <div class="alert alert-danger">
+                            @logErrorMessage
+                        </div>
+                    }
+                    else if (isLoadingLogs)
+                    {
+                        <p>Loading logs...</p>
+                    }
+                    else
+                    {
+                        <pre class="bg-dark text-light p-3 rounded"
+                             style="white-space: pre-wrap; max-height: 500px; overflow-y: auto;">@containerLogs</pre>
+                    }
+                }
             </div>
         </div>
     </div>
@@ -116,6 +156,11 @@
     private string? restartingContainerId;
     private string? errorMessage;
     private string? successMessage;
+    private string? logContainerId;
+    private string? logContainerName;
+    private string? containerLogs;
+    private string? logErrorMessage;
+    private bool isLoadingLogs;
 
     protected override async Task OnInitializedAsync()
     {
@@ -169,6 +214,49 @@
         finally
         {
             restartingContainerId = null;
+        }
+    }
+
+    private async Task LoadContainerLogsAsync(ContainerInfo container)
+    {
+        logContainerId = container.Id;
+        logContainerName = container.Name;
+
+        await LoadLogsAsync(container.Id);
+    }
+
+    private async Task RefreshSelectedLogsAsync()
+    {
+        if (string.IsNullOrWhiteSpace(logContainerId))
+        {
+            return;
+        }
+
+        await LoadLogsAsync(logContainerId);
+    }
+
+    private async Task LoadLogsAsync(string containerId)
+    {
+        isLoadingLogs = true;
+        logErrorMessage = null;
+        containerLogs = null;
+
+        try
+        {
+            containerLogs = await DockerService.GetContainerLogsAsync(containerId);
+
+            if (string.IsNullOrWhiteSpace(containerLogs))
+            {
+                containerLogs = "No logs returned.";
+            }
+        }
+        catch (Exception ex)
+        {
+            logErrorMessage = $"Unable to load logs: {ex.Message}";
+        }
+        finally
+        {
+            isLoadingLogs = false;
         }
     }
 

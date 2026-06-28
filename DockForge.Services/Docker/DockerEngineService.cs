@@ -44,6 +44,24 @@ public sealed class DockerEngineService : IDockerService, IDisposable
         }).ToList();
     }
 
+    public async Task<string> GetContainerLogsAsync(string containerId, int tail = 200)
+    {
+        using var logs = await _client.Containers.GetContainerLogsAsync(
+            containerId,
+            tty: false,
+            new ContainerLogsParameters
+            {
+                ShowStdout = true,
+                ShowStderr = true,
+                Timestamps = true,
+                Tail = tail.ToString()
+            });
+
+        var (stdout, stderr) = await logs.ReadOutputToEndAsync(CancellationToken.None);
+
+        return string.Concat(stdout, stderr);
+    }
+
     public async Task RestartContainerAsync(string containerId)
     {
         await _client.Containers.RestartContainerAsync(containerId, new ContainerRestartParameters());

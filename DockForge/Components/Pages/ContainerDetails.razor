@@ -1,0 +1,267 @@
+﻿@page "/containers/{ContainerId}"
+
+@using DockForge.Core.Interfaces
+@using DockForge.Core.Models
+@inject IDockerService DockerService
+@inject NavigationManager NavigationManager
+
+<PageTitle>Container Details - DockForge</PageTitle>
+
+<h1>🐳 Container Details</h1>
+
+<p>
+    <a href="/">← Back to Dashboard</a>
+</p>
+
+@if (!string.IsNullOrWhiteSpace(errorMessage))
+{
+    <div class="alert alert-danger">
+        @errorMessage
+    </div>
+}
+
+@if (!string.IsNullOrWhiteSpace(successMessage))
+{
+    <div class="alert alert-success">
+        @successMessage
+    </div>
+}
+
+@if (isLoading)
+{
+    <p>Loading container...</p>
+}
+else if (container is null)
+{
+    <div class="alert alert-warning">
+        Container not found.
+    </div>
+}
+else
+{
+    var isDockForge = container.Name.Equals("dockforge", StringComparison.OrdinalIgnoreCase);
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card mb-3">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h3>@container.Name</h3>
+                            <p class="text-muted mb-1">@container.Image</p>
+                        </div>
+
+                        <span class="badge @GetStatusBadgeClass(container.Status)">
+                            @container.Status
+                        </span>
+                    </div>
+
+                    <hr />
+
+                    <p>
+                        <strong>ID:</strong>
+                        <br />
+                        <small>@container.Id</small>
+                    </p>
+
+                    <p>
+                        <strong>Created:</strong>
+                        <br />
+                        @container.Created.ToLocalTime().ToString("g")
+                    </p>
+
+                    <h5>Ports</h5>
+
+                    @if (container.Ports.Count == 0)
+                    {
+                        <p class="text-muted">No published ports.</p>
+                    }
+                    else
+                    {
+                        <ul class="list-group">
+                            @foreach (var port in container.Ports)
+                            {
+                                <li class="list-group-item d-flex justify-content-between">
+                                    <span>@port.PrivatePort/@port.Type</span>
+                                    <span>
+                                        @(port.PublicPort == 0 ? "Not published" : port.PublicPort.ToString())
+                                    </span>
+                                </li>
+                            }
+                        </ul>
+                    }
+
+                    <hr />
+
+                    <div class="d-flex gap-2">
+                        <button type="button"
+                                class="btn btn-primary"
+                                disabled="@isLoading"
+                                @onclick="LoadContainerAsync">
+                            Refresh
+                        </button>
+
+                        <button type="button"
+                                class="btn btn-warning"
+                                disabled="@(isDockForge || isRestarting)"
+                                @onclick="RestartContainerAsync">
+                            @(isRestarting ? "Restarting..." : "Restart")
+                        </button>
+                    </div>
+
+                    @if (isDockForge)
+                    {
+                        <small class="text-muted d-block mt-2">
+                            Restart disabled for DockForge itself.
+                        </small>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card mb-3">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h3 class="mb-0">📜 Logs</h3>
+
+                        <button type="button"
+                                class="btn btn-sm btn-outline-secondary"
+                                disabled="@isLoadingLogs"
+                                @onclick="LoadLogsAsync">
+                            @(isLoadingLogs ? "Refreshing..." : "Refresh Logs")
+                        </button>
+                    </div>
+
+                    @if (!string.IsNullOrWhiteSpace(logErrorMessage))
+                    {
+                        <div class="alert alert-danger">
+                            @logErrorMessage
+                        </div>
+                    }
+                    else if (isLoadingLogs)
+                    {
+                        <p>Loading logs...</p>
+                    }
+                    else
+                    {
+                        <pre class="bg-dark text-light p-3 rounded"
+                             style="white-space: pre-wrap; max-height: 600px; overflow-y: auto;">@containerLogs</pre>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public string ContainerId { get; set; } = string.Empty;
+
+    private ContainerInfo? container;
+    private string? containerLogs;
+    private string? errorMessage;
+    private string? successMessage;
+    private string? logErrorMessage;
+    private bool isLoading = true;
+    private bool isRestarting;
+    private bool isLoadingLogs;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadContainerAsync();
+        await LoadLogsAsync();
+    }
+
+    private async Task LoadContainerAsync()
+    {
+        isLoading = true;
+        errorMessage = null;
+        successMessage = null;
+
+        try
+        {
+            var containers = await DockerService.GetContainersAsync();
+            container = containers.FirstOrDefault(c => c.Id == ContainerId);
+
+            if (container is null)
+            {
+                errorMessage = "Container could not be found. It may have been removed or recreated.";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Unable to load container: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task RestartContainerAsync()
+    {
+        if (container is null)
+        {
+            return;
+        }
+
+        errorMessage = null;
+        successMessage = $"Restarting {container.Name}...";
+        isRestarting = true;
+
+        try
+        {
+            await DockerService.RestartContainerAsync(container.Id);
+            await LoadContainerAsync();
+
+            successMessage = $"Restarted {container.Name}.";
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Unable to restart {container.Name}: {ex.Message}";
+            successMessage = null;
+        }
+        finally
+        {
+            isRestarting = false;
+        }
+    }
+
+    private async Task LoadLogsAsync()
+    {
+        if (string.IsNullOrWhiteSpace(ContainerId))
+        {
+            return;
+        }
+
+        isLoadingLogs = true;
+        logErrorMessage = null;
+        containerLogs = null;
+
+        try
+        {
+            containerLogs = await DockerService.GetContainerLogsAsync(ContainerId);
+
+            if (string.IsNullOrWhiteSpace(containerLogs))
+            {
+                containerLogs = "No logs returned.";
+            }
+        }
+        catch (Exception ex)
+        {
+            logErrorMessage = $"Unable to load logs: {ex.Message}";
+        }
+        finally
+        {
+            isLoadingLogs = false;
+        }
+    }
+
+    private static string GetStatusBadgeClass(string status)
+    {
+        return status.Equals("running", StringComparison.OrdinalIgnoreCase)
+            ? "bg-success"
+            : "bg-secondary";
+    }
+}

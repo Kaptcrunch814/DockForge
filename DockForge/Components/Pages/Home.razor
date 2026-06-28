@@ -75,6 +75,11 @@
                                         <span class="badge @GetStatusBadgeClass(container.Status)">
                                             @container.Status
                                         </span>
+                                        
+                                        <a class="btn btn-sm btn-outline-primary"
+                                           href="@($"/containers/{container.Id}")">
+                                            Details
+                                        </a>
 
                                         <button class="btn btn-sm btn-warning"
                                                 disabled="@(isDockForge || isRestarting || isLoading)"

@@ -6,7 +6,7 @@ using DockForge.Core.Interfaces;
 
 namespace DockForge.Services.Docker
 {
-    public class DockerService : IDockerService
+    public class FakeDockerService : IDockerService
     {
         public Task<List<ContainerInfo>> GetContainersAsync()
         {

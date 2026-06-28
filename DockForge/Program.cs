@@ -8,7 +8,17 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
-builder.Services.AddScoped<IDockerService, DockerService>();
+var useFakeDocker = builder.Configuration.GetValue("Docker:UseFakeData", true);
+
+if (useFakeDocker)
+{
+    builder.Services.AddScoped<IDockerService, FakeDockerService>();
+}
+else
+{
+    builder.Services.AddScoped<IDockerService, DockerEngineService>();
+}
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

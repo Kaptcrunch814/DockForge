@@ -10,7 +10,7 @@ namespace DockForge.Core.Models
         public string Name { get; set; } = string.Empty;
         public string Image { get; set; } = string.Empty;
         public string Status { get; set; } = string.Empty;
-        public string Created { get; set; } = string.Empty;
+        public DateTime Created { get; set; } 
         public List<ContainerPort> Ports { get; set; } = [];
 
     }

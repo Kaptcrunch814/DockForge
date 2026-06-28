@@ -1,3 +1,5 @@
 <Solution>
+  <Project Path="DockForge.Core/DockForge.Core.csproj" Id="b7f6d905-6dfd-4f40-ba45-4d7c5d4b619d" />
+  <Project Path="DockForge.Services/DockForge.Services.csproj" Id="96f186fb-9f67-4599-ab56-6ff61b637a9d" />
   <Project Path="DockForge/DockForge.csproj" />
 </Solution>

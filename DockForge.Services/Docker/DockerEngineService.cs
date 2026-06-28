@@ -44,6 +44,11 @@ public sealed class DockerEngineService : IDockerService, IDisposable
         }).ToList();
     }
 
+    public async Task RestartContainerAsync(string containerId)
+    {
+        await _client.Containers.RestartContainerAsync(containerId, new ContainerRestartParameters());
+    }
+
     public void Dispose()
     {
         _client.Dispose();

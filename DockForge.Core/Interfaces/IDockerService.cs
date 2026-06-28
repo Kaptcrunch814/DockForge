@@ -8,5 +8,7 @@ namespace DockForge.Core.Interfaces
     public interface IDockerService
     {
         Task<List<ContainerInfo>> GetContainersAsync();
+
+        Task RestartContainerAsync(string containerId);
     }
 }

@@ -14,12 +14,14 @@ namespace DockForge.Services.Docker
             {
                 new()
                 {
+                    Id = "fake-satisfactory-server",
                     Name = "satisfactory-server",
                     Image = "wolveix/satisfactory-server",
                     Status = "Running"
                 },
                 new()
                 {
+                    Id = "fake-portainer",
                     Name = "portainer",
                     Image = "portainer/portainer-ce",
                     Status = "Running"
@@ -28,5 +30,10 @@ namespace DockForge.Services.Docker
 
             return Task.FromResult(containers);
         }
-    }
+
+        public Task RestartContainerAsync(string containerId)
+        {
+            return Task.CompletedTask;
+        }
+}
 }

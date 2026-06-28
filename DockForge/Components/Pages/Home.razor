@@ -35,6 +35,13 @@
                     </div>
                 }
 
+                @if (!string.IsNullOrWhiteSpace(successMessage))
+                {
+                    <div class="alert alert-success">
+                        @successMessage
+                    </div>
+                }
+
                 @if (isLoading && containers.Count == 0)
                 {
                     <p>Loading containers...</p>
@@ -52,16 +59,36 @@
                     <ul class="list-group">
                         @foreach (var container in containers)
                         {
-                            <li class="list-group-item d-flex justify-content-between align-items-center">
-                                <div>
-                                    <strong>@container.Name</strong>
-                                    <br />
-                                    <small>@container.Image</small>
+                            var isDockForge = container.Name.Equals("dockforge", StringComparison.OrdinalIgnoreCase);
+                            var isRestarting = restartingContainerId == container.Id;
+
+                            <li class="list-group-item">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <strong>@container.Name</strong>
+                                        <br />
+                                        <small>@container.Image</small>
+                                    </div>
+
+                                    <div class="d-flex gap-2 align-items-center">
+                                        <span class="badge @GetStatusBadgeClass(container.Status)">
+                                            @container.Status
+                                        </span>
+
+                                        <button class="btn btn-sm btn-warning"
+                                                disabled="@isDockForge || isRestarting || isLoading"
+                                                @onclick="() => RestartContainerAsync(container)">
+                                            @(isRestarting ? "Restarting..." : "Restart")
+                                        </button>
+                                    </div>
                                 </div>
 
-                                <span class="badge @GetStatusBadgeClass(container.Status)">
-                                    @container.Status
-                                </span>
+                                @if (isDockForge)
+                                {
+                                    <small class="text-muted">
+                                        Restart disabled for DockForge itself.
+                                    </small>
+                                }
                             </li>
                         }
                     </ul>
@@ -85,7 +112,9 @@
 @code {
     private List<ContainerInfo> containers = [];
     private bool isLoading = true;
+    private string? restartingContainerId;
     private string? errorMessage;
+    private string? successMessage;
 
     protected override async Task OnInitializedAsync()
     {
@@ -96,6 +125,7 @@
     {
         isLoading = true;
         errorMessage = null;
+        successMessage = null;
 
         try
         {
@@ -109,6 +139,29 @@
         finally
         {
             isLoading = false;
+        }
+    }
+
+    private async Task RestartContainerAsync(ContainerInfo container)
+    {
+        errorMessage = null;
+        successMessage = null;
+        restartingContainerId = container.Id;
+
+        try
+        {
+            await DockerService.RestartContainerAsync(container.Id);
+
+            successMessage = $"Restarted {container.Name}.";
+            await LoadContainersAsync();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Unable to restart {container.Name}: {ex.Message}";
+        }
+        finally
+        {
+            restartingContainerId = null;
         }
     }
 

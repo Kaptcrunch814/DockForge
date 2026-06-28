@@ -1,26 +1,69 @@
 ﻿@page "/"
 
+@using DockForge.Core.Interfaces
+@using DockForge.Core.Models
+@inject IDockerService DockerService
+
 <PageTitle>DockForge</PageTitle>
 
 <h1>⚙ DockForge</h1>
 
+<p class="lead">
+    Welcome to your Homelab Command Center.
+</p>
+
+<hr />
+
 <div class="row">
-    <div class="col-md-4">
+    <div class="col-md-6">
         <div class="card">
             <div class="card-body">
                 <h3>🐳 Containers</h3>
-                <p>No containers loaded.</p>
+
+                @if (containers.Count == 0)
+                {
+                    <p>No containers loaded.</p>
+                }
+                else
+                {
+                    <ul class="list-group">
+                        @foreach (var container in containers)
+                        {
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong>@container.Name</strong>
+                                    <br />
+                                    <small>@container.Image</small>
+                                </div>
+
+                                <span class="badge bg-success">
+                                    @container.Status
+                                </span>
+                            </li>
+                        }
+                    </ul>
+                }
             </div>
         </div>
     </div>
 
-    <div class="col-md-4">
+    <div class="col-md-6">
         <div class="card">
             <div class="card-body">
                 <h3>📊 Resources</h3>
                 <p>CPU: --</p>
                 <p>RAM: --</p>
+                <p>GPU: --</p>
             </div>
         </div>
     </div>
 </div>
+
+@code {
+    private List<ContainerInfo> containers = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        containers = await DockerService.GetContainersAsync();
+    }
+}

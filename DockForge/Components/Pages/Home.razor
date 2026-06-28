@@ -1,4 +1,5 @@
 ﻿@page "/"
+@rendermode InteractiveServer
 
 @using DockForge.Core.Interfaces
 @using DockForge.Core.Models
@@ -22,7 +23,7 @@
                     <h3 class="mb-0">🐳 Containers</h3>
 
                     <button class="btn btn-sm btn-primary"
-                            @onclick="LoadContainersAsync"
+                            @onclick="() => LoadContainersAsync()"
                             disabled="@isLoading">
                         @(isLoading ? "Refreshing..." : "Refresh")
                     </button>
@@ -76,7 +77,7 @@
                                         </span>
 
                                         <button class="btn btn-sm btn-warning"
-                                                disabled="@isDockForge || isRestarting || isLoading"
+                                                disabled="@(isDockForge || isRestarting || isLoading)"
                                                 @onclick="() => RestartContainerAsync(container)">
                                             @(isRestarting ? "Restarting..." : "Restart")
                                         </button>
@@ -121,11 +122,15 @@
         await LoadContainersAsync();
     }
 
-    private async Task LoadContainersAsync()
+    private async Task LoadContainersAsync(bool clearMessages = true)
     {
         isLoading = true;
-        errorMessage = null;
-        successMessage = null;
+
+        if (clearMessages)
+        {
+            errorMessage = null;
+            successMessage = null;
+        }
 
         try
         {
@@ -145,19 +150,21 @@
     private async Task RestartContainerAsync(ContainerInfo container)
     {
         errorMessage = null;
-        successMessage = null;
+        successMessage = $"Restarting {container.Name}...";
         restartingContainerId = container.Id;
 
         try
         {
             await DockerService.RestartContainerAsync(container.Id);
 
+            await LoadContainersAsync(clearMessages: false);
+
             successMessage = $"Restarted {container.Name}.";
-            await LoadContainersAsync();
         }
         catch (Exception ex)
         {
             errorMessage = $"Unable to restart {container.Name}: {ex.Message}";
+            successMessage = null;
         }
         finally
         {

@@ -22,35 +22,62 @@ public sealed class DockerEngineService : IDockerService, IDisposable
 
     public async Task<List<ContainerInfo>> GetContainersAsync()
     {
-        var containers = await _client.Containers.ListContainersAsync(
+        var dockerContainers = await _client.Containers.ListContainersAsync(
             new ContainersListParameters
             {
                 All = true
             });
 
-        return containers.Select(container => new ContainerInfo
+        var results = new List<ContainerInfo>();
+
+        foreach (var dockerContainer in dockerContainers)
         {
-            Id = container.ID,
-            Name = container.Names.FirstOrDefault()?.TrimStart('/') ?? container.ID,
-            Image = container.Image,
-            Status = container.State,
-            Created = container.Created,
-            Ports = container.Ports
-                .GroupBy(port => new
+            DateTime? startedAt = null;
+
+            try
+            {
+                var inspect = await _client.Containers.InspectContainerAsync(dockerContainer.ID);
+
+                if (inspect.State is not null &&
+                    inspect.State.Running &&
+                    DateTime.TryParse(inspect.State.StartedAt.ToString(), out var parsedStartedAt))
                 {
-                    port.PrivatePort,
-                    port.PublicPort,
-                    Type = port.Type ?? string.Empty
-                })
-                .Select(group => group.First())
-                .Select(port => new ContainerPort
-                {
-                    PrivatePort = port.PrivatePort,
-                    PublicPort = port.PublicPort,
-                    Type = port.Type ?? string.Empty
-                })
-                .ToList()
-        }).ToList();
+                    startedAt = parsedStartedAt;
+                }
+            }
+            catch
+            {
+                // If inspect fails, we still want to show the container.
+                startedAt = null;
+            }
+
+            results.Add(new ContainerInfo
+            {
+                Id = dockerContainer.ID,
+                Name = dockerContainer.Names.FirstOrDefault()?.TrimStart('/') ?? dockerContainer.ID,
+                Image = dockerContainer.Image,
+                Status = dockerContainer.State,
+                Created = dockerContainer.Created,
+                StartedAt = startedAt,
+                Ports = dockerContainer.Ports
+                    .GroupBy(port => new
+                    {
+                        port.PrivatePort,
+                        port.PublicPort,
+                        Type = port.Type ?? string.Empty
+                    })
+                    .Select(group => group.First())
+                    .Select(port => new ContainerPort
+                    {
+                        PrivatePort = port.PrivatePort,
+                        PublicPort = port.PublicPort,
+                        Type = port.Type ?? string.Empty
+                    })
+                    .ToList()
+            });
+        }
+
+        return results;
     }
 
     public async Task<string> GetContainerLogsAsync(string containerId, int tail = 200)

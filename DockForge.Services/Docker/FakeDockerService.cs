@@ -17,14 +17,16 @@ namespace DockForge.Services.Docker
                     Id = "fake-satisfactory-server",
                     Name = "satisfactory-server",
                     Image = "wolveix/satisfactory-server",
-                    Status = "Running"
+                    Status = "Running",
+                    StartedAt = DateTime.UtcNow.AddHours(-5).AddMinutes(-23)
                 },
                 new()
                 {
                     Id = "fake-portainer",
                     Name = "portainer",
                     Image = "portainer/portainer-ce",
-                    Status = "Running"
+                    Status = "Running",
+                    StartedAt = DateTime.UtcNow.AddDays(-2).AddHours(-4)
                 }
             };
 

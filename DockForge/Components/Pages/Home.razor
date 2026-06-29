@@ -1,162 +1,164 @@
 ﻿@page "/"
-@rendermode InteractiveServer
 
+@using DockForge.Core.Helpers
 @using DockForge.Core.Interfaces
 @using DockForge.Core.Models
-@using DockForge.Core.Helpers
 @inject IDockerService DockerService
 
 <PageTitle>DockForge</PageTitle>
 
-<h1>⚙ DockForge</h1>
+<div class="dockforge-page">
+    <div class="dockforge-header">
+        <div>
+            <h1>⚙ DockForge</h1>
+            <p>Your Homelab Command Center</p>
+        </div>
 
-<p class="lead">
-    Welcome to your Homelab Command Center.
-</p>
+        <button class="btn btn-primary"
+                @onclick="() => LoadContainersAsync()"
+                disabled="@isLoading">
+            @(isLoading ? "Refreshing..." : "Refresh")
+        </button>
+    </div>
 
-<hr />
+    @if (!string.IsNullOrWhiteSpace(errorMessage))
+    {
+        <div class="alert alert-danger">
+            @errorMessage
+        </div>
+    }
 
-<div class="row">
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h3 class="mb-0">🐳 Containers</h3>
+    @if (!string.IsNullOrWhiteSpace(successMessage))
+    {
+        <div class="alert alert-success">
+            @successMessage
+        </div>
+    }
 
-                    <button class="btn btn-sm btn-primary"
-                            @onclick="() => LoadContainersAsync()"
-                            disabled="@isLoading">
-                        @(isLoading ? "Refreshing..." : "Refresh")
-                    </button>
+    <div class="dashboard-grid">
+        <section class="dashboard-card">
+            <div class="card-header-row">
+                <div>
+                    <h2>🐳 Containers</h2>
+                    <p>@containers.Count container@(containers.Count == 1 ? "" : "s") found</p>
                 </div>
+            </div>
 
-                @if (!string.IsNullOrWhiteSpace(errorMessage))
-                {
-                    <div class="alert alert-danger">
-                        @errorMessage
-                    </div>
-                }
+            @if (isLoading && containers.Count == 0)
+            {
+                <p class="muted-text">Loading containers...</p>
+            }
+            else if (containers.Count == 0)
+            {
+                <p class="muted-text">No containers found.</p>
+            }
+            else
+            {
+                <div class="container-list">
+                    @foreach (var container in containers)
+                    {
+                        var isDockForge = container.Name.Equals("dockforge", StringComparison.OrdinalIgnoreCase);
+                        var isRestarting = restartingContainerId == container.Id;
 
-                @if (!string.IsNullOrWhiteSpace(successMessage))
-                {
-                    <div class="alert alert-success">
-                        @successMessage
-                    </div>
-                }
+                        <div class="container-row">
+                            <div class="container-main">
+                                <div class="container-name-row">
+                                    <strong>@container.Name</strong>
 
-                @if (isLoading && containers.Count == 0)
-                {
-                    <p>Loading containers...</p>
-                }
-                else if (containers.Count == 0)
-                {
-                    <p>No containers found.</p>
-                }
-                else
-                {
-                    <p class="text-muted">
-                        @containers.Count container@(containers.Count == 1 ? "" : "s") found
-                    </p>
+                                    <span class="status-pill @GetStatusPillClass(container.Status)">
+                                        @container.Status
+                                    </span>
+                                </div>
 
-                    <ul class="list-group">
-                        @foreach (var container in containers)
-                        {
-                            var isDockForge = container.Name.Equals("dockforge", StringComparison.OrdinalIgnoreCase);
-                            var isRestarting = restartingContainerId == container.Id;
+                                <div class="container-image">
+                                    @container.Image
+                                </div>
 
-                            <li class="list-group-item">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <strong>@container.Name</strong>
-                                        <br />
-                                        <small>@container.Image</small>
-                                        <br />
-                                        <small class="text-muted">
-                                            Uptime: @UptimeFormatter.GetUptimeText(container)
-                                        </small>
-                                    </div>
-
-                                    <div class="d-flex gap-2 align-items-center">
-                                        <span class="badge @GetStatusBadgeClass(container.Status)">
-                                            @container.Status
-                                        </span>
-                                        
-                                        <a class="btn btn-sm btn-outline-primary"
-                                           href="@($"/containers/{container.Id}")">
-                                            Details
-                                        </a>
-
-                                        <button class="btn btn-sm btn-warning"
-                                                disabled="@(isDockForge || isRestarting || isLoading)"
-                                                @onclick="() => RestartContainerAsync(container)">
-                                            @(isRestarting ? "Restarting..." : "Restart")
-                                        </button>
-
-                                        <button type="button"
-                                                class="btn btn-sm btn-secondary"
-                                                disabled="@(isLoadingLogs && logContainerId == container.Id)"
-                                                @onclick="() => LoadContainerLogsAsync(container)">
-                                            @(isLoadingLogs && logContainerId == container.Id ? "Loading..." : "Logs")
-                                        </button>
-                                    </div>
+                                <div class="container-meta">
+                                    Uptime: @UptimeFormatter.GetUptimeText(container)
                                 </div>
 
                                 @if (isDockForge)
                                 {
-                                    <small class="text-muted">
+                                    <div class="container-note">
                                         Restart disabled for DockForge itself.
-                                    </small>
+                                    </div>
                                 }
-                            </li>
-                        }
-                    </ul>
-                }
-            </div>
-        </div>
-    </div>
+                            </div>
 
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-body">
-                <h3>📜 Logs</h3>
+                            <div class="container-actions">
+                                <a class="btn btn-sm btn-outline-info"
+                                   href="@($"/containers/{container.Id}")">
+                                    Details
+                                </a>
 
-                @if (string.IsNullOrWhiteSpace(logContainerName))
-                {
-                    <p class="text-muted">
-                        Select a container and click Logs to view recent output.
-                    </p>
-                }
-                else
-                {
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <strong>@logContainerName</strong>
+                                <button type="button"
+                                        class="btn btn-sm btn-warning"
+                                        disabled="@(isDockForge || isRestarting || isLoading)"
+                                        @onclick="() => RestartContainerAsync(container)">
+                                    @(isRestarting ? "Restarting..." : "Restart")
+                                </button>
 
-                        <button type="button"
-                                class="btn btn-sm btn-outline-secondary"
-                                disabled="@isLoadingLogs"
-                                @onclick="RefreshSelectedLogsAsync">
-                            @(isLoadingLogs ? "Refreshing..." : "Refresh Logs")
-                        </button>
-                    </div>
-
-                    @if (!string.IsNullOrWhiteSpace(logErrorMessage))
-                    {
-                        <div class="alert alert-danger">
-                            @logErrorMessage
+                                <button type="button"
+                                        class="btn btn-sm btn-secondary"
+                                        disabled="@(isLoadingLogs && logContainerId == container.Id)"
+                                        @onclick="() => LoadContainerLogsAsync(container)">
+                                    @(isLoadingLogs && logContainerId == container.Id ? "Loading..." : "Logs")
+                                </button>
+                            </div>
                         </div>
                     }
-                    else if (isLoadingLogs)
+                </div>
+            }
+        </section>
+
+        <section class="dashboard-card">
+            <div class="card-header-row">
+                <div>
+                    <h2>📜 Logs</h2>
+
+                    @if (string.IsNullOrWhiteSpace(logContainerName))
                     {
-                        <p>Loading logs...</p>
+                        <p>Select a container to view recent output.</p>
                     }
                     else
                     {
-                        <pre class="bg-dark text-light p-3 rounded"
-                             style="white-space: pre-wrap; max-height: 500px; overflow-y: auto;">@containerLogs</pre>
+                        <p>@logContainerName</p>
                     }
+                </div>
+
+                @if (!string.IsNullOrWhiteSpace(logContainerName))
+                {
+                    <button type="button"
+                            class="btn btn-sm btn-outline-light"
+                            disabled="@isLoadingLogs"
+                            @onclick="RefreshSelectedLogsAsync">
+                        @(isLoadingLogs ? "Refreshing..." : "Refresh Logs")
+                    </button>
                 }
             </div>
-        </div>
+
+            @if (!string.IsNullOrWhiteSpace(logErrorMessage))
+            {
+                <div class="alert alert-danger">
+                    @logErrorMessage
+                </div>
+            }
+            else if (string.IsNullOrWhiteSpace(logContainerName))
+            {
+                <div class="empty-log-panel">
+                    No logs selected.
+                </div>
+            }
+            else if (isLoadingLogs)
+            {
+                <p class="muted-text">Loading logs...</p>
+            }
+            else
+            {
+                <pre class="log-panel">@containerLogs</pre>
+            }
+        </section>
     </div>
 </div>
 
@@ -166,6 +168,7 @@
     private string? restartingContainerId;
     private string? errorMessage;
     private string? successMessage;
+
     private string? logContainerId;
     private string? logContainerName;
     private string? containerLogs;
@@ -270,10 +273,10 @@
         }
     }
 
-    private static string GetStatusBadgeClass(string status)
+    private static string GetStatusPillClass(string status)
     {
         return status.Equals("running", StringComparison.OrdinalIgnoreCase)
-            ? "bg-success"
-            : "bg-secondary";
+            ? "status-running"
+            : "status-stopped";
     }
 }

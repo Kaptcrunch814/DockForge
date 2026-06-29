@@ -58,3 +58,195 @@ h1:focus {
 .form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
     text-align: start;
 }
+
+:root {
+    --dockforge-bg: #0f172a;
+    --dockforge-panel: #111827;
+    --dockforge-panel-soft: #1f2937;
+    --dockforge-border: #334155;
+    --dockforge-text: #e5e7eb;
+    --dockforge-muted: #94a3b8;
+    --dockforge-accent: #38bdf8;
+    --dockforge-success: #22c55e;
+    --dockforge-warning: #f59e0b;
+    --dockforge-danger: #ef4444;
+}
+
+body {
+    background: var(--dockforge-bg);
+    color: var(--dockforge-text);
+}
+
+.dockforge-page {
+    min-height: 100vh;
+    padding: 1.5rem;
+    background: radial-gradient(circle at top left, rgba(56, 189, 248, 0.15), transparent 35%), var(--dockforge-bg);
+}
+
+.dockforge-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+    .dockforge-header h1 {
+        margin: 0;
+        font-size: 2.25rem;
+        font-weight: 700;
+    }
+
+    .dockforge-header p {
+        margin: 0.25rem 0 0;
+        color: var(--dockforge-muted);
+    }
+
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+    gap: 1.5rem;
+}
+
+.dashboard-card {
+    background: rgba(17, 24, 39, 0.92);
+    border: 1px solid var(--dockforge-border);
+    border-radius: 16px;
+    padding: 1.25rem;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.28);
+}
+
+.card-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: start;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+    .card-header-row h2 {
+        margin: 0;
+        font-size: 1.35rem;
+    }
+
+    .card-header-row p {
+        margin: 0.25rem 0 0;
+        color: var(--dockforge-muted);
+    }
+
+.container-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.container-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1rem;
+    background: var(--dockforge-panel-soft);
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    border-radius: 12px;
+}
+
+.container-main {
+    min-width: 0;
+}
+
+.container-name-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.container-image {
+    margin-top: 0.25rem;
+    color: var(--dockforge-muted);
+    font-size: 0.9rem;
+    word-break: break-word;
+}
+
+.container-meta {
+    margin-top: 0.35rem;
+    color: #cbd5e1;
+    font-size: 0.85rem;
+}
+
+.container-note {
+    margin-top: 0.35rem;
+    color: var(--dockforge-muted);
+    font-size: 0.8rem;
+}
+
+.container-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.status-pill {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    padding: 0.2rem 0.6rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.status-running {
+    color: #052e16;
+    background: var(--dockforge-success);
+}
+
+.status-stopped {
+    color: #111827;
+    background: #94a3b8;
+}
+
+.log-panel,
+.empty-log-panel {
+    min-height: 420px;
+    max-height: 620px;
+    overflow-y: auto;
+    border-radius: 12px;
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    background: #020617;
+    color: #d1d5db;
+}
+
+.log-panel {
+    padding: 1rem;
+    white-space: pre-wrap;
+    font-size: 0.85rem;
+}
+
+.empty-log-panel {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--dockforge-muted);
+}
+
+.muted-text {
+    color: var(--dockforge-muted);
+}
+
+@media (max-width: 992px) {
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .container-row {
+        flex-direction: column;
+    }
+
+    .container-actions {
+        justify-content: flex-start;
+    }
+}
